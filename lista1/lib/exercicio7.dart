@@ -5,6 +5,6 @@ void execute(int numero) {
   }
   print("Tabuada do numero $numero");
   for (int i = 1; i <= 10; i++) {
-    print('$numero X $i = ${tabuada.elementAt(i-1)}');
+    print('$numero X $i = ${tabuada.elementAt(i - 1)}');
   }
 }
