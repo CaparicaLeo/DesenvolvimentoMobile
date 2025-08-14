@@ -14,7 +14,7 @@ void main(List<String> arguments) {
   exercicio3.execute(3, 2);
   quebralinha();
   print("Exercicio 4: ");
-  exercicio4.execute([3, 5, 6]);
+  exercicio4.execute([7, 5, 6]);
   quebralinha();
 }
 
