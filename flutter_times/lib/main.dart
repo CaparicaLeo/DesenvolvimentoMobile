@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_times/home_page.dart';
-import 'package:flutter_times/home_page2.dart';
 
 void main() {
-  runApp(MaterialApp(home: HomePage2()));
+  runApp(MaterialApp(home: HomePage(), debugShowCheckedModeBanner: false));
 }
