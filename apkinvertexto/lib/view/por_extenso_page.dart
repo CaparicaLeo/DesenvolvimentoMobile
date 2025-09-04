@@ -1,3 +1,4 @@
+import 'package:apkinvertexto/service/invertexto_service.dart';
 import 'package:flutter/material.dart';
 
 class PorExtensoPage extends StatefulWidget {
@@ -8,6 +9,10 @@ class PorExtensoPage extends StatefulWidget {
 }
 
 class _PorExtensoPageState extends State<PorExtensoPage> {
+  String? campo;
+  String? resultado;
+  final apiService = InvertextoService();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +37,66 @@ class _PorExtensoPageState extends State<PorExtensoPage> {
         ),
       ),
       backgroundColor: Colors.black,
-      body: Padding(padding: EdgeInsets.all(10), child: Column()),
+      body: Padding(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Digite um numero',
+                labelStyle: TextStyle(color: Colors.white),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.numberWithOptions(),
+              style: TextStyle(color: Colors.white, fontSize: 18),
+              onSubmitted: (value) {
+                setState(() {
+                  campo = value;
+                });
+              },
+            ),
+            Expanded(
+              child: FutureBuilder(
+                future: apiService.convertePorExtenso(campo),
+                builder: (context, snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.waiting:
+                    case ConnectionState.none:
+                      return Container(
+                        width: 200,
+                        height: 200,
+                        alignment: Alignment.center,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                          strokeWidth: 8.0,
+                        ),
+                      );
+                    default:
+                      if (snapshot.hasError) {
+                        return Container();
+                      } else {
+                        return exibeResultado(context, snapshot);
+                      }
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget exibeResultado(BuildContext context, AsyncSnapshot snapshot) {
+    return Padding(
+      padding: EdgeInsets.only(top: 10),
+      child: Text(
+        snapshot.data["text"] ?? '',
+        style: TextStyle(color: Colors.white, fontSize: 18),
+        softWrap: true,
+      ),
     );
   }
 }

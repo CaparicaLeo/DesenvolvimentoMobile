@@ -25,6 +25,7 @@ class InvertextoService {
   }
 
   Future<Map<String, dynamic>> buscaCEP(String? valor) async {
+    print(valor);
     try {
       final uri = Uri.parse(
         "https://api.invertexto.com/v1/cep/$valor?token=$_token",
@@ -33,7 +34,7 @@ class InvertextoService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception('Erro ${response.statusCode} : ${response.body}');
+        throw Exception('Erro ${response.statusCode}: ${response.body}');
       }
     } on SocketException {
       throw Exception('Erro de conexão com a internet');
