@@ -1,47 +1,49 @@
 import 'package:apkinvertexto/service/invertexto_service.dart';
 import 'package:flutter/material.dart';
 
-class BuscaCepPage extends StatefulWidget {
-  const BuscaCepPage({super.key});
+class BuscaCNPJPage extends StatefulWidget {
+  const BuscaCNPJPage({super.key});
 
   @override
-  State<BuscaCepPage> createState() => _BuscaCepPageState();
+  State<BuscaCNPJPage> createState() => _BuscaCNPJPageState();
 }
 
-class _BuscaCepPageState extends State<BuscaCepPage> {
-  final _cepController = TextEditingController();
+class _BuscaCNPJPageState extends State<BuscaCNPJPage> {
+  final _cnpjController = TextEditingController();
   final _apiService = InvertextoService();
-  Future<Map<String, dynamic>>? _cepFuture;
+  Future<Map<String, dynamic>>? _cnpjFuture;
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
-  void _buscarCEP() {
-    final cepLimpo = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
+  void _buscarCNPJ() {
+    final cnpjLimpo = _cnpjController.text.replaceAll(RegExp(r'[^0-9]'), '');
 
-    // Validação de entrada: CEP deve ter 8 dígitos
-    if (cepLimpo.isEmpty) {
-      _showErrorSnackBar('O campo CEP não pode estar vazio.');
+    if (cnpjLimpo.isEmpty) {
+      _showErrorSnackBar('O campo CNPJ não pode estar vazio.');
       return;
     }
-    if (cepLimpo.length != 8) {
-      _showErrorSnackBar('CEP inválido. Um CEP deve conter 8 dígitos.');
+    if (cnpjLimpo.length != 14) {
+      _showErrorSnackBar('CNPJ inválido. Um CNPJ deve conter 14 dígitos.');
       return;
     }
-
+    
     FocusScope.of(context).unfocus();
 
     setState(() {
-      _cepFuture = _apiService.buscaCEP(cepLimpo);
+      _cnpjFuture = _apiService.buscaCNPJ(cnpjLimpo);
     });
   }
 
   @override
   void dispose() {
-    _cepController.dispose();
+    _cnpjController.dispose();
     super.dispose();
   }
 
@@ -77,9 +79,9 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _cepController,
+                    controller: _cnpjController,
                     decoration: const InputDecoration(
-                      labelText: "Digite o CEP",
+                      labelText: "Digite o CNPJ",
                       labelStyle: TextStyle(color: Colors.white),
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.white54),
@@ -90,13 +92,13 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
                     ),
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white, fontSize: 18),
-                    onSubmitted: (_) => _buscarCEP(),
+                    onSubmitted: (_) => _buscarCNPJ(),
                   ),
                 ),
                 const SizedBox(width: 10),
                 IconButton(
                   icon: const Icon(Icons.search, color: Colors.white, size: 30),
-                  onPressed: _buscarCEP,
+                  onPressed: _buscarCNPJ,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
@@ -107,7 +109,9 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
               ],
             ),
             const SizedBox(height: 20),
-            Expanded(child: _buildFutureBuilder()),
+            Expanded(
+              child: _buildFutureBuilder(),
+            ),
           ],
         ),
       ),
@@ -115,17 +119,18 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
   }
 
   Widget _buildFutureBuilder() {
-    if (_cepFuture == null) {
+    // ... (código já mostrado acima, com o tratamento de erro)
+    if (_cnpjFuture == null) {
       return const Center(
         child: Text(
-          'Digite um CEP e pressione buscar.',
+          'Digite um CNPJ e pressione buscar.',
           style: TextStyle(color: Colors.white, fontSize: 18),
         ),
       );
     }
 
     return FutureBuilder<Map<String, dynamic>>(
-      future: _cepFuture,
+      future: _cnpjFuture,
       builder: (context, snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.waiting:
@@ -147,11 +152,7 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 60,
-                    ),
+                    const Icon(Icons.error_outline, color: Colors.red, size: 60),
                     const SizedBox(height: 16),
                     Text(
                       errorMessage,
@@ -164,7 +165,7 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(
                 child: Text(
-                  'Nenhum dado encontrado para este CEP.',
+                  'Nenhum dado encontrado para este CNPJ.',
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               );
@@ -177,16 +178,13 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
   }
 
   Widget _buildResultadoWidget(Map<String, dynamic> data) {
+    // ... (widget de resultado continua o mesmo)
     Widget infoTile(String title, String value) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: RichText(
           text: TextSpan(
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              height: 1.5,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5),
             children: [
               TextSpan(
                 text: '$title: ',
@@ -199,6 +197,12 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
       );
     }
 
+    final endereco = data['endereco'];
+    final enderecoCompleto =
+        '${endereco['logradouro'] ?? ''}, ${endereco['numero'] ?? 'S/N'}\n'
+        '${endereco['bairro'] ?? ''} - ${endereco['municipio'] ?? ''}/${endereco['uf'] ?? ''}\n'
+        'CEP: ${endereco['cep'] ?? ''}';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade900,
@@ -207,12 +211,18 @@ class _BuscaCepPageState extends State<BuscaCepPage> {
       padding: const EdgeInsets.all(16.0),
       child: ListView(
         children: [
-          infoTile('CEP', data['cep'] ?? 'Não informado'),
+          infoTile('Razão Social', data['razao_social'] ?? 'Não informado'),
+          infoTile('Nome Fantasia', data['nome_fantasia'] ?? 'Não informado'),
           const Divider(color: Colors.white24),
-          infoTile('Logradouro', data['logradouro'] ?? 'Não informado'),
-          infoTile('Bairro', data['bairro'] ?? 'Não informado'),
-          infoTile('Cidade', data['cidade'] ?? 'Não informado'),
-          infoTile('Estado', data['uf'] ?? 'Não informado'),
+          infoTile('CNPJ', data['cnpj'] ?? 'Não informado'),
+          infoTile('Situação', data['situacao']?['nome'] ?? 'Não informado'),
+          const Divider(color: Colors.white24),
+          infoTile('Endereço', enderecoCompleto),
+          const Divider(color: Colors.white24),
+          infoTile('Atividade Principal', data['atividade_principal']?['descricao'] ?? 'Não informado'),
+          const Divider(color: Colors.white24),
+          infoTile('Telefone', data['telefone1'] ?? 'Não informado'),
+          infoTile('E-mail', data['email'] ?? 'Não informado'),
         ],
       ),
     );

@@ -64,6 +64,25 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
+            SizedBox(height: 30),
+            GestureDetector(
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.home, color: Colors.white, size: 50),
+                  SizedBox(width: 10),
+                  Text(
+                    'Busca por CEP',
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => BuscaCepPage()),
+                );
+              },
+            ),
           ],
         ),
       ),
