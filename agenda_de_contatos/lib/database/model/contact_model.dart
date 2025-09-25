@@ -37,9 +37,6 @@ class Contact {
     if (id != null) {
       map[idColumn] = id;
     }
-    if (img != null) {
-      map[imageColumn] = img;
-    }
 
     return map;
   }
