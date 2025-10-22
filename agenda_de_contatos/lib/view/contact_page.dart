@@ -23,7 +23,10 @@ class _ContactPageState extends State<ContactPage> {
   final _imgController = TextEditingController();
   final ContactHelper _helper = ContactHelper();
   final ImagePicker _picker = ImagePicker();
-  final phoneMask = MaskTextInputFormatter(mask: '(##) #####-####', filter: {"#": RegExp(r'[0-9]')});
+  final phoneMask = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
 
   @override
   void initState() {
@@ -125,20 +128,53 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   void _saveContact() async {
+    // 1. Validação do Nome (já existia)
+    if (_editContact?.name == null || _editContact!.name!.isEmpty) {
+      _showSnackBar("Nome é Obrigatório");
+      return; // Para a execução
+    }
+
+    // 2. Validação do Email
+    String email = _editContact?.email ?? "";
+    if (email.isNotEmpty) {
+      // Regex simples para validação de email
+      final emailRegExp = RegExp(
+        r"^[a-zA-Z0-9.a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$",
+      );
+      if (!emailRegExp.hasMatch(email)) {
+        _showSnackBar("Email inválido. Verifique o formato.");
+        return; // Para a execução
+      }
+    }
+
+    // 3. Validação do Telefone
+    String phone = _editContact?.phone ?? "";
+    // A máscara (##) #####-#### tem 15 caracteres no total
+    // Se o campo não estiver vazio, ele DEVE ter 15 caracteres
+    if (phone.isNotEmpty && phone.length != 15) {
+      _showSnackBar("Número de telefone incompleto.");
+      return; // Para a execução
+    }
+
+    // Se todas as validações passaram, continua para salvar
     if (_editContact?.img == "") {
       _editContact?.img = null;
     }
-    if (_editContact?.name != null && _editContact!.name!.isNotEmpty) {
-      if (_editContact?.id != null) {
-        await _helper.updateContact(_editContact!);
-      } else {
-        await _helper.saveContact(_editContact!);
-      }
-      Navigator.pop(context, _editContact);
+
+    if (_editContact?.id != null) {
+      await _helper.updateContact(_editContact!);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Nome é Obrigatório")));
+      await _helper.saveContact(_editContact!);
     }
+    Navigator.pop(context, _editContact);
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red, // Destaque para o erro
+      ),
+    );
   }
 }

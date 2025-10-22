@@ -29,8 +29,8 @@ class InvertextoService {
 
       // Adiciona o parâmetro de moeda apenas se ele for fornecido e não estiver vazio
       if (moeda != null && moeda.isNotEmpty) {
-        uri += "&moeda=$moeda";
-      }
+        uri += "&currency=$moeda";
+      } 
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
