@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class NewsService {
-  final String _token = "";
+  final String _token = "76a6a927c695731b344ad7ade2ca32d9";
 
   Future<Map> getNews(String query, int offset) async {
     http.Response response;
