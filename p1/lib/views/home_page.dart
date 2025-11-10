@@ -13,8 +13,7 @@ class _HomePageState extends State<HomePage> {
   String _search = '';
   int _offset = 0;
   bool _loadingMore = false;
-  bool _isSearching = false;
-  List _newsData = [];
+  final List _newsData = [];
 
   final NewsService newsService = NewsService();
 
@@ -25,14 +24,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _loadNews() async {
+    if (_loadingMore) return;
+
     setState(() {
       _loadingMore = true;
     });
-    var newNews = await newsService.getNews(_search, _offset);
-    setState(() {
-      _loadingMore = false;
-      _newsData.addAll(newNews["data"]); //conferir na response
-    });
+
+    try {
+      var newNews = await newsService.getNews(_search, _offset);
+
+      if (mounted) {
+        setState(() {
+          _newsData.addAll(newNews["articles"]);
+        });
+      }
+    } catch (e) {
+      print("Erro ao carregar notícias: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao carregar notícias.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingMore = false;
+        });
+      }
+    }
   }
 
   @override
@@ -40,44 +59,39 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.redAccent,
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [Text('Capa News')],
         ),
       ),
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.grey[200],
       body: Column(
         children: <Widget>[
           Padding(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             child: TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Procure aqui a sua notícia",
                 labelStyle: TextStyle(color: Colors.black),
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
-              style: TextStyle(color: Colors.black, fontSize: 18),
+              style: const TextStyle(color: Colors.black, fontSize: 18),
               textAlign: TextAlign.center,
               onSubmitted: (value) {
                 setState(() {
                   _search = value;
                   _offset = 0;
                   _newsData.clear();
-                  _isSearching = true;
                 });
                 _loadNews();
               },
             ),
           ),
           Expanded(
-            child: _newsData.isEmpty && !_loadingMore && _isSearching
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.redAccent,
-                      ),
-                    ),
-                  )
+            child: _newsData.isEmpty && _loadingMore
+                ? newsLoadingIndicator()
                 : _createNewsTable(),
           ),
         ],
@@ -85,8 +99,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Retorna um indicador de progresso centralizado
   Widget newsLoadingIndicator() {
-    return Center(
+    return const Center(
       child: CircularProgressIndicator(
         valueColor: AlwaysStoppedAnimation<Color>(Colors.redAccent),
         strokeWidth: 5.0,
@@ -94,52 +109,84 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Cria a grade de notícias (SOMENTE TEXTO)
+  /// Cria a lista de notícias (SOMENTE TEXTO)
   Widget _createNewsTable() {
-    bool hasMoreNews = _newsData.length < 7;
-
-    return GridView.builder(
-      padding: EdgeInsets.all(10),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 1,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
+    // Trocamos GridView.builder por ListView.builder
+    return ListView.builder(
+      padding: const EdgeInsets.all(10),
+      // O 'gridDelegate' não é mais necessário
       itemCount: _newsData.length + 1,
       itemBuilder: (context, index) {
+        // --- Item de Notícia (Card de Texto) ---
         if (index < _newsData.length) {
           var news = _newsData[index];
-          var newsUrl = news["images"]["original"]["url"];
+          var newsTitle = news["title"];
+
           return GestureDetector(
-            child: Image.network(newsUrl, height: 300, fit: BoxFit.cover),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => NewsPage(news)),
               );
             },
+            // Adicionamos um Margin para o Card "respirar"
+            child: Card(
+              margin: const EdgeInsets.only(
+                bottom: 10,
+              ), // Espaçamento SÓ em baixo
+              elevation: 4.0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              child: Padding(
+                // Diminuí o padding vertical para o card ficar menos "alto"
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 20.0,
+                ),
+                child: Text(
+                  newsTitle ?? "Notícia sem título",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
           );
-        } else {
+        }
+        // --- Botão "Carregar Mais" ---
+        else {
           return Container(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: GestureDetector(
               onTap: !_loadingMore
                   ? () {
                       setState(() {
-                        _loadingMore = true;
                         _offset += 7;
                       });
                       _loadNews();
                     }
                   : null,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(Icons.add, color: Colors.black, size: 70),
-                  Text(
-                    'Chegou ao fim? Veja mais!',
-                    style: TextStyle(color: Colors.black, fontSize: 22),
-                  ),
-                ],
-              ),
+              child: _loadingMore
+                  ? newsLoadingIndicator()
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.add, color: Colors.black, size: 50),
+                        Text(
+                          _newsData.isNotEmpty
+                              ? 'Carregar mais...'
+                              : 'Tente novamente',
+                          style: TextStyle(color: Colors.black, fontSize: 18),
+                        ),
+                      ],
+                    ),
             ),
           );
         }
