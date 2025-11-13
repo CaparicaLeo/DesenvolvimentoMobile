@@ -61,7 +61,9 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.redAccent,
         title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Text('Capa News')],
+          children: [
+            Text('Capa News', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
       backgroundColor: Colors.grey[200],
@@ -73,9 +75,22 @@ class _HomePageState extends State<HomePage> {
               decoration: const InputDecoration(
                 labelText: "Procure aqui a sua notícia",
                 labelStyle: TextStyle(color: Colors.black),
-                border: OutlineInputBorder(),
+                
+                // Estilo do rótulo quando focado
+                floatingLabelStyle: TextStyle(color: Colors.redAccent),
+                
                 filled: true,
                 fillColor: Colors.white,
+
+                // Borda padrão (quando não está focado)
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                
+                // Borda quando o campo está focado (clicado)
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.redAccent, width: 2.0),
+                ),
               ),
               style: const TextStyle(color: Colors.black, fontSize: 18),
               textAlign: TextAlign.center,
@@ -99,7 +114,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Retorna um indicador de progresso centralizado
   Widget newsLoadingIndicator() {
     return const Center(
       child: CircularProgressIndicator(
@@ -109,16 +123,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Cria a grade de notícias (SOMENTE TEXTO)
-  /// Cria a lista de notícias (SOMENTE TEXTO)
   Widget _createNewsTable() {
-    // Trocamos GridView.builder por ListView.builder
     return ListView.builder(
       padding: const EdgeInsets.all(10),
-      // O 'gridDelegate' não é mais necessário
       itemCount: _newsData.length + 1,
       itemBuilder: (context, index) {
-        // --- Item de Notícia (Card de Texto) ---
         if (index < _newsData.length) {
           var news = _newsData[index];
           var newsTitle = news["title"];
@@ -130,17 +139,15 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (context) => NewsPage(news)),
               );
             },
-            // Adicionamos um Margin para o Card "respirar"
             child: Card(
               margin: const EdgeInsets.only(
                 bottom: 10,
-              ), // Espaçamento SÓ em baixo
+              ),
               elevation: 4.0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0),
               ),
               child: Padding(
-                // Diminuí o padding vertical para o card ficar menos "alto"
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
                   vertical: 20.0,
@@ -160,7 +167,6 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         }
-        // --- Botão "Carregar Mais" ---
         else {
           return Container(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
