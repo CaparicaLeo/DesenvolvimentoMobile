@@ -17,10 +17,29 @@ class _HomePageState extends State<HomePage> {
 
   final NewsService newsService = NewsService();
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _loadNews();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_loadingMore) {
+        setState(() {
+          _offset += 7;
+        });
+        _loadNews();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadNews() async {
@@ -35,6 +54,9 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
+          if (_offset == 0) {
+            _newsData.clear();
+          }
           _newsData.addAll(newNews["articles"]);
         });
       }
@@ -72,24 +94,25 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: "Procure aqui a sua notícia",
-                labelStyle: TextStyle(color: Colors.black),
-                
-                // Estilo do rótulo quando focado
-                floatingLabelStyle: TextStyle(color: Colors.redAccent),
-                
+                labelStyle: TextStyle(color: Colors.grey[700]),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey[700],
+                ),
                 filled: true,
                 fillColor: Colors.white,
-
-                // Borda padrão (quando não está focado)
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide.none,
                 ),
-                
-                // Borda quando o campo está focado (clicado)
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.redAccent, width: 2.0),
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 2.0,
+                  ),
                 ),
               ),
               style: const TextStyle(color: Colors.black, fontSize: 18),
@@ -98,16 +121,13 @@ class _HomePageState extends State<HomePage> {
                 setState(() {
                   _search = value;
                   _offset = 0;
-                  _newsData.clear();
                 });
                 _loadNews();
               },
             ),
           ),
           Expanded(
-            child: _newsData.isEmpty && _loadingMore
-                ? newsLoadingIndicator()
-                : _createNewsTable(),
+            child: _buildNewsList(),
           ),
         ],
       ),
@@ -123,80 +143,124 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _createNewsTable() {
+  Widget _buildNewsList() {
+    if (_newsData.isEmpty && _loadingMore && _search.isEmpty) {
+      return newsLoadingIndicator();
+    }
+
+    if (_newsData.isEmpty && !_loadingMore) {
+      return const Center(
+        child: Text(
+          "Nenhuma notícia encontrada.",
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(10),
-      itemCount: _newsData.length + 1,
+      itemCount: _newsData.length + (_loadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < _newsData.length) {
           var news = _newsData[index];
-          var newsTitle = news["title"];
-
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NewsPage(news)),
-              );
-            },
-            child: Card(
-              margin: const EdgeInsets.only(
-                bottom: 10,
-              ),
-              elevation: 4.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 20.0,
-                ),
-                child: Text(
-                  newsTitle ?? "Notícia sem título",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          );
-        }
-        else {
-          return Container(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: GestureDetector(
-              onTap: !_loadingMore
-                  ? () {
-                      setState(() {
-                        _offset += 7;
-                      });
-                      _loadNews();
-                    }
-                  : null,
-              child: _loadingMore
-                  ? newsLoadingIndicator()
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.add, color: Colors.black, size: 50),
-                        Text(
-                          _newsData.isNotEmpty
-                              ? 'Carregar mais...'
-                              : 'Tente novamente',
-                          style: TextStyle(color: Colors.black, fontSize: 18),
-                        ),
-                      ],
-                    ),
-            ),
-          );
+          return NewsCard(news: news);
+        } else {
+          return newsLoadingIndicator();
         }
       },
+    );
+  }
+}
+
+class NewsCard extends StatelessWidget {
+  final dynamic news;
+
+  const NewsCard({super.key, required this.news});
+
+  @override
+  Widget build(BuildContext context) {
+    final String title = news['title'] ?? 'Notícia sem título';
+    final String? imageUrl = news['image'];
+    final String? sourceName = news['source']?['name'];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NewsPage(news)),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12.0),
+        elevation: 4.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imageUrl != null)
+              Image.network(
+                imageUrl,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const SizedBox(
+                    height: 180,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.redAccent,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox(
+                    height: 180,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                        size: 40,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (sourceName != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 12.0),
+                child: Text(
+                  sourceName,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -12,7 +12,7 @@ class NewsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.redAccent,
-        title: const Text('Capa News'),
+        title: const Text('Capa News', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
